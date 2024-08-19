@@ -6,15 +6,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # 1. Memuat dataset dan melakukan clustering
-file_path = 'passing-grade.csv'
+file_path = 'skorrrr.csv'
 data = pd.read_csv(file_path)
 
-# Mengonversi 'NAMA PRODI' menjadi label numerik
+# Mengonversi 'PRODI' menjadi label numerik
 label_encoder_prodi = LabelEncoder()
-data['Prodi_Label'] = label_encoder_prodi.fit_transform(data['NAMA PRODI'])
+data['Prodi_Label'] = label_encoder_prodi.fit_transform(data['PRODI'])
 
-# Menyiapkan fitur untuk clustering berdasarkan skor UTBK
-features = data[['MIN']]
+# Menyiapkan fitur untuk clustering
+features = data[['Min_Skor', 'Prodi_Label']]
 
 # Menentukan jumlah cluster (K)
 num_clusters = st.slider('Pilih Jumlah Cluster:', min_value=2, max_value=10, value=3)
@@ -27,7 +27,7 @@ data['Cluster'] = kmeans.fit_predict(features)
 st.title('Rekomendasi Universitas Berdasarkan Nilai dan Program Studi')
 
 # Dropdown untuk memilih program studi
-prodi_options = sorted(data['NAMA PRODI'].unique())
+prodi_options = sorted(data['PRODI'].unique())  # Mengurutkan program studi dari A sampai Z
 selected_prodi = st.selectbox('Pilih Program Studi:', prodi_options)
 
 # Input untuk memasukkan nilai pengguna
@@ -36,41 +36,48 @@ user_score = st.number_input('Masukkan Nilai Anda:', min_value=0.0, max_value=10
 # 3. Memproses input pengguna dan memberikan rekomendasi
 if st.button('Tampilkan Rekomendasi'):
     # Filter data berdasarkan program studi yang dipilih
-    filtered_data = data[data['NAMA PRODI'] == selected_prodi].copy()
+    filtered_data = data[data['PRODI'] == selected_prodi].copy()
     
     # Menghitung jarak antara nilai pengguna dan nilai minimum dalam dataset
-    filtered_data['Distance'] = abs(filtered_data['MIN'] - user_score)
+    filtered_data['Distance'] = abs(filtered_data['Min_Skor'] - user_score)
     
     # Mengurutkan berdasarkan jarak dan mengambil top 3
     top_3 = filtered_data.sort_values(by='Distance').head(3)
     
-    # Menampilkan hasil rekomendasi berdasarkan nilai minimum
+    # Tampilkan hasil rekomendasi
     st.write('Top 3 Universitas Berdasarkan Nilai Minimum:')
-    st.write(top_3[['PTN', 'NAMA PRODI', 'MIN']])
+    st.write(top_3[['PTN', 'PRODI', 'Min_Skor']])
     
-    # Menyaring universitas dalam cluster yang sama
-    user_cluster = data.loc[data['NAMA PRODI'] == selected_prodi, 'Cluster'].values[0]
+    # Rekomendasi berdasarkan cluster yang sama
+    user_cluster = data.loc[data['PRODI'] == selected_prodi, 'Cluster'].values[0]
     cluster_filtered_data = data[data['Cluster'] == user_cluster].copy()
     
     # Menghitung jarak antara nilai pengguna dan nilai minimum dalam cluster yang sama
-    cluster_filtered_data['Distance'] = abs(cluster_filtered_data['MIN'] - user_score)
+    cluster_filtered_data['Distance'] = abs(cluster_filtered_data['Min_Skor'] - user_score)
     
     # Mengurutkan berdasarkan jarak dan mengambil top 3 di cluster yang sama
     cluster_top_3 = cluster_filtered_data.sort_values(by='Distance').head(3)
     
     # Menampilkan hasil rekomendasi berdasarkan cluster
     st.write('Top 3 Universitas Berdasarkan Cluster:')
-    st.write(cluster_top_3[['PTN', 'NAMA PRODI', 'MIN']])
+    st.write(cluster_top_3[['PTN', 'PRODI', 'Min_Skor']])
+
+    # Rekomendasi Lainnya Berdasarkan Nilai Terdekat dari semua program studi
+    data['Distance'] = abs(data['Min_Skor'] - user_score)
+    top_3_nearest = data.sort_values(by='Distance').head(3)
+    
+    st.write('Rekomendasi Lainnya Berdasarkan Nilai Terdekat:')
+    st.write(top_3_nearest[['PTN', 'PRODI', 'Min_Skor']])
 
 # 4. Visualisasi hasil clustering
 st.subheader('Visualisasi Hasil Clustering')
 
 # Membuat visualisasi scatter plot berdasarkan clustering
 fig, ax = plt.subplots()
-scatter = ax.scatter(data['MIN'], data['Prodi_Label'], c=data['Cluster'], cmap='viridis', alpha=0.6, edgecolors='w', s=100)
-ax.set_xlabel('MIN Skor')
+scatter = ax.scatter(data['Min_Skor'], data['Prodi_Label'], c=data['Cluster'], cmap='viridis', alpha=0.6, edgecolors='w', s=100)
+ax.set_xlabel('Min Skor')
 ax.set_ylabel('Prodi Label')
-ax.set_title('Visualisasi Kluster Berdasarkan Skor UTBK')
+ax.set_title('Visualisasi Kluster Berdasarkan Program Studi')
 
 # Menambahkan anotasi cluster pada scatter plot
 handles, labels = scatter.legend_elements(prop="colors", alpha=0.6)
