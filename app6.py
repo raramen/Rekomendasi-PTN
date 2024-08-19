@@ -42,14 +42,21 @@ if st.button('Tampilkan Rekomendasi'):
     filtered_data['Distance'] = abs(filtered_data['Min_Skor'] - user_score)
     
     # Mengurutkan berdasarkan jarak dan mengambil top 3
-    top_n = filtered_data.sort_values(by='Distance').head(3)
+    top_3 = filtered_data.sort_values(by='Distance').head(3)
     
     # Tampilkan hasil rekomendasi dengan menyesuaikan pesan sesuai jumlah hasil
-    if len(top_n) > 0:
-        st.write(f'Top {len(top_n)} Universitas:')
-        st.write(top_n[['PTN', 'Min_Skor']])
+    if len(top_3) > 0:
+        st.write(f'Top {len(top_3)} Universitas:')
+        st.write(top_3[['PTN', 'PRODI', 'Min_Skor']])
     else:
         st.write('Tidak ada universitas yang cocok dengan nilai yang Anda masukkan.')
+
+    # Rekomendasi Lainnya Berdasarkan Nilai Terdekat dari semua program studi
+    data['Distance'] = abs(data['Min_Skor'] - user_score)
+    top_3_nearest = data.sort_values(by='Distance').head(3)
+    
+    st.write('Rekomendasi Lainnya Berdasarkan Nilai Terdekat:')
+    st.write(top_3_nearest[['PTN', 'PRODI', 'Min_Skor']])
 
 # 4. Visualisasi hasil clustering
 st.subheader('Visualisasi Hasil Clustering')
@@ -59,7 +66,7 @@ fig, ax = plt.subplots()
 scatter = ax.scatter(data['Min_Skor'], data['Prodi_Label'], c=data['Cluster'], cmap='viridis', alpha=0.6, edgecolors='w', s=100)
 ax.set_xlabel('Min Skor')
 ax.set_ylabel('Prodi Label')
-ax.set_title('Visualisasi Kluster Berdasarkan Program Studi')  # Perbaikan di sini
+ax.set_title('Visualisasi Kluster Berdasarkan Program Studi')
 
 # Menampilkan plot
 st.pyplot(fig)
@@ -77,6 +84,6 @@ sns.barplot(x=cluster_counts.index, y=cluster_counts.values, ax=ax2, palette='vi
 
 ax2.set_xlabel('Cluster')
 ax2.set_ylabel('Jumlah Program Studi')
-ax2.set_title('Distribusi Program Studi per Cluster')  # Perbaikan di sini
+ax2.set_title('Distribusi Program Studi per Cluster')
 
 st.pyplot(fig2)
